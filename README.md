@@ -11,6 +11,11 @@ equipment registered in the [cold-monitor backend](https://github.com/carloslpv/
 temperature and status, a temperature chart against its allowed range, and the readings that fell out of range. It
 updates live as readings arrive, with no page refresh.
 
+![Monitor page with four pieces of equipment, live temperature charts against their allowed range and the latest out-of-range readings](docs/screenshots/dashboard.png)
+
+The architecture diagram and an overview of the whole system are in
+[cold-monitor-infra](https://github.com/carloslpv/cold-monitor-infra).
+
 ### What it shows
 
 - **Summary**: how many pieces of equipment are monitored, how many are in range or out of range right now, how many
@@ -26,6 +31,8 @@ updates live as readings arrive, with no page refresh.
 - **Out-of-range readings**: the latest 100 out-of-range readings across all equipment, newest first.
 - **Period**: 15 minutes, 1 hour, 6 hours or 24 hours.
 
+![Light theme during an excursion: the cold room panel and the "out of range now" counter turn red](docs/screenshots/dashboard-light.png)
+
 ### Login
 
 The dashboard opens on a login form; the user and password are the backend's `ADMIN_USERNAME` and `ADMIN_PASSWORD`.
@@ -34,6 +41,9 @@ the user with a **Sair** button to log out. Requests that change data send the C
 `XSRF-TOKEN` cookie. If the session ends (it expired, or someone logged out in another tab), the next request or stream
 reconnection brings the login form back with a notice. Sessions survive backend restarts, so a monitor left open on a
 screen stays logged in.
+
+Someone logged in with the backend's read-only account (`VIEWER_USERNAME`, used by the public demo) sees everything,
+but the **Equipamentos** page hides the buttons to register, edit, deactivate and reactivate.
 
 ### Managing equipment
 
@@ -65,6 +75,24 @@ connection drops, the indicator in the header switches to *Reconectando…*; onc
 
 Long periods can hold many thousands of readings, so each chart keeps the lowest and highest point of each time slice
 (about 600 points in total). Short excursions past a threshold stay visible.
+
+### Technical decisions
+
+- **`EventSource` instead of a WebSocket library.** The dashboard only listens; every change it makes is a REST call.
+  The browser's built-in `EventSource` reconnects on its own and sends the session cookie, so live updates need no
+  dependency and no token handling. Events missed while disconnected are not replayed, so after a reconnect the
+  history is reloaded and merged with what streamed in meanwhile, without duplicates.
+- **Same origin in production.** The Docker image serves the page with nginx and proxies `/api` (stream included, with
+  buffering off), so the browser never makes a cross-origin call and the session cookie stays `SameSite=Lax`. Only the
+  Vite dev server talks to the backend across origins.
+- **Min/max downsampling.** A 24-hour window can hold tens of thousands of readings per equipment. Each chart keeps the
+  lowest and highest point of each time bucket (about 600 points), so drawing stays fast and a short excursion past a
+  threshold is never averaged away.
+- **No state library.** One hook (`useMonitor`) owns the data: initial REST load, live stream, reconnection and the
+  per-equipment reading lists. React state and a few small hooks are enough for one page, and keep the bundle small.
+- **Status is never color alone.** Every status has an icon and a label, panels follow the system light or dark theme,
+  and forms check the same rules as the backend before sending, showing the backend's per-field errors when it still
+  refuses.
 
 ### Stack
 
@@ -153,6 +181,11 @@ equipamentos ativos cadastrados no [backend do cold-monitor](https://github.com/
 temperatura e o status atuais, um gráfico de temperatura com a faixa permitida e as leituras que ficaram fora da faixa.
 Tudo é atualizado ao vivo conforme as leituras chegam, sem recarregar a página.
 
+![Página de monitoramento com quatro equipamentos, gráficos de temperatura ao vivo contra a faixa permitida e as últimas leituras fora da faixa](docs/screenshots/dashboard.png)
+
+O diagrama de arquitetura e a visão geral do sistema inteiro estão no
+[cold-monitor-infra](https://github.com/carloslpv/cold-monitor-infra).
+
 ### O que aparece
 
 - **Resumo**: quantos equipamentos são monitorados, quantos estão na faixa ou fora dela agora, quantos pararam de
@@ -168,6 +201,8 @@ Tudo é atualizado ao vivo conforme as leituras chegam, sem recarregar a página
 - **Leituras fora da faixa**: as 100 leituras fora da faixa mais recentes de todos os equipamentos.
 - **Período**: 15 minutos, 1 hora, 6 horas ou 24 horas.
 
+![Tema claro durante uma excursão: o painel da câmara fria e o contador "fora da faixa agora" ficam vermelhos](docs/screenshots/dashboard-light.png)
+
 ### Login
 
 O dashboard abre num formulário de login; o usuário e a senha são o `ADMIN_USERNAME` e o `ADMIN_PASSWORD` do backend.
@@ -176,6 +211,9 @@ com um botão **Sair**. As requisições que alteram dados enviam o token de CSR
 `XSRF-TOKEN`. Se a sessão acabar (expirou, ou alguém saiu em outra aba), a próxima requisição ou reconexão do fluxo
 traz o formulário de login de volta com um aviso. As sessões sobrevivem a reinícios do backend, então um monitor
 deixado aberto numa tela continua logado.
+
+Quem entra com a conta só de leitura do backend (`VIEWER_USERNAME`, usada na demo pública) vê tudo, mas a página
+**Equipamentos** não mostra os botões de cadastrar, editar, desativar e reativar.
 
 ### Gestão de equipamentos
 
@@ -210,6 +248,26 @@ nesse meio-tempo.
 
 Períodos longos podem ter milhares de leituras, então cada gráfico mantém o menor e o maior ponto de cada intervalo de
 tempo (cerca de 600 pontos no total). Excursões curtas além dos limites continuam visíveis.
+
+### Decisões técnicas
+
+- **`EventSource` em vez de uma biblioteca de WebSocket.** O dashboard só escuta; toda alteração que ele faz é uma
+  chamada REST. O `EventSource` nativo do navegador reconecta sozinho e envia o cookie de sessão, então as atualizações
+  ao vivo não precisam de dependência nem de controle de token. Eventos perdidos durante uma desconexão não são
+  reenviados, então depois de reconectar o histórico é recarregado e mesclado com o que chegou pelo fluxo nesse
+  meio-tempo, sem duplicatas.
+- **Mesma origem em produção.** A imagem Docker serve a página com nginx e repassa `/api` (inclusive o fluxo, com o
+  buffer desligado), então o navegador nunca faz chamada entre origens e o cookie de sessão fica `SameSite=Lax`. Só o
+  servidor de desenvolvimento do Vite fala com o backend em outra origem.
+- **Redução de pontos por mínimo e máximo.** Uma janela de 24 horas pode ter dezenas de milhares de leituras por
+  equipamento. Cada gráfico guarda o ponto mais baixo e o mais alto de cada intervalo de tempo (cerca de 600 pontos),
+  então o desenho continua rápido e uma excursão curta além do limite nunca some numa média.
+- **Sem biblioteca de estado.** Um hook (`useMonitor`) é dono dos dados: carga inicial pelo REST, fluxo ao vivo,
+  reconexão e as listas de leituras por equipamento. O estado do React e alguns hooks pequenos bastam para uma página,
+  e mantêm o bundle pequeno.
+- **Status nunca só por cor.** Todo status tem ícone e texto, os painéis seguem o tema claro ou escuro do sistema e os
+  formulários verificam as mesmas regras do backend antes de enviar, mostrando os erros por campo do backend quando ele
+  ainda recusa.
 
 ### Tecnologias
 
