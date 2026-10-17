@@ -172,6 +172,12 @@ src
 nginx                nginx config of the Docker image
 ```
 
+### License
+
+[PolyForm Noncommercial 1.0.0](LICENSE.md): you may read, run and modify this code for personal, study, research and
+other noncommercial purposes. Commercial use needs written permission from the author; get in touch through
+[GitHub](https://github.com/carloslpv).
+
 ---
 
 ## Português (Brasil)
@@ -345,3 +351,9 @@ src
 └── lib              cliente da API, tipos, formatação, redução de pontos, validação do formulário de equipamento
 nginx                configuração do nginx da imagem Docker
 ```
+
+### Licença
+
+[PolyForm Noncommercial 1.0.0](LICENSE.md): você pode ler, rodar e modificar este código para uso pessoal, estudo,
+pesquisa e outros fins não comerciais. Uso comercial precisa de autorização por escrito do autor; entre em contato
+pelo [GitHub](https://github.com/carloslpv).
