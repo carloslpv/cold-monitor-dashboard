@@ -11,7 +11,7 @@ equipment registered in the [cold-monitor backend](https://github.com/carloslpv/
 temperature and status, a temperature chart against its allowed range, and the readings that fell out of range. It
 updates live as readings arrive, with no page refresh.
 
-![Monitor page with four pieces of equipment, live temperature charts against their allowed range and the latest out-of-range readings](docs/screenshots/dashboard.png)
+![The dashboard live: readings arrive every few seconds, an excursion turns a panel red and clears once the temperature is back in range](docs/screenshots/dashboard-live.gif)
 
 The architecture diagram and an overview of the whole system are in
 [cold-monitor-infra](https://github.com/carloslpv/cold-monitor-infra).
@@ -181,7 +181,7 @@ equipamentos ativos cadastrados no [backend do cold-monitor](https://github.com/
 temperatura e o status atuais, um gráfico de temperatura com a faixa permitida e as leituras que ficaram fora da faixa.
 Tudo é atualizado ao vivo conforme as leituras chegam, sem recarregar a página.
 
-![Página de monitoramento com quatro equipamentos, gráficos de temperatura ao vivo contra a faixa permitida e as últimas leituras fora da faixa](docs/screenshots/dashboard.png)
+![O dashboard ao vivo: as leituras chegam a cada poucos segundos, uma excursão deixa um painel vermelho e some quando a temperatura volta à faixa](docs/screenshots/dashboard-live.gif)
 
 O diagrama de arquitetura e a visão geral do sistema inteiro estão no
 [cold-monitor-infra](https://github.com/carloslpv/cold-monitor-infra).
