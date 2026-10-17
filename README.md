@@ -26,6 +26,15 @@ updates live as readings arrive, with no page refresh.
 - **Out-of-range readings**: the latest 100 out-of-range readings across all equipment, newest first.
 - **Period**: 15 minutes, 1 hour, 6 hours or 24 hours.
 
+### Login
+
+The dashboard opens on a login form; the user and password are the backend's `ADMIN_USERNAME` and `ADMIN_PASSWORD`.
+Logging in starts a session kept in an HTTP-only cookie, which also authorizes the live stream, and the header shows
+the user with a **Sair** button to log out. Requests that change data send the CSRF token the backend keeps in the
+`XSRF-TOKEN` cookie. If the session ends (it expired, or someone logged out in another tab), the next request or stream
+reconnection brings the login form back with a notice. Sessions survive backend restarts, so a monitor left open on a
+screen stays logged in.
+
 ### Managing equipment
 
 The **Equipamentos** tab (`#/equipamentos`) lists all equipment, active and inactive, and lets you:
@@ -67,7 +76,8 @@ Long periods can hold many thousands of readings, so each chart keeps the lowest
 ### Requirements
 
 - Node.js 20.19+ or 22.12+
-- The cold-monitor backend running (see its README). It allows requests from `http://localhost:5173` by default.
+- The cold-monitor backend running (see its README). It allows requests from `http://localhost:5173`, with the
+  session cookie, by default.
 - Optionally, the [cold-monitor simulator](https://github.com/carloslpv/cold-monitor-simulator) to generate readings.
 
 ### Running
@@ -80,7 +90,7 @@ npm run dev
 Open `http://localhost:5173`. To see data move, start the backend and the simulator, for example:
 
 ```bash
-java -jar target/cold-monitor-simulator.jar --interval 1s --excursion-probability 0.05
+java -jar target/cold-monitor-simulator.jar --api-key <DEVICE_API_KEY> --interval 1s --excursion-probability 0.05
 ```
 
 ### Configuration
@@ -128,7 +138,8 @@ src
 ├── App.tsx          page layout, navigation and period selection
 ├── components       header, summary, equipment panel, chart, out-of-range table, status badge,
 │                    equipment management (list, form, dialog)
-├── hooks            data loading and live stream (useMonitor), current page, clock, chart colors
+├── hooks            login session (useAuth), data loading and live stream (useMonitor), current page, clock,
+│                    chart colors
 └── lib              API client, types, formatting, downsampling, equipment form validation
 nginx                nginx config of the Docker image
 ```
@@ -156,6 +167,15 @@ Tudo é atualizado ao vivo conforme as leituras chegam, sem recarregar a página
   chega.
 - **Leituras fora da faixa**: as 100 leituras fora da faixa mais recentes de todos os equipamentos.
 - **Período**: 15 minutos, 1 hora, 6 horas ou 24 horas.
+
+### Login
+
+O dashboard abre num formulário de login; o usuário e a senha são o `ADMIN_USERNAME` e o `ADMIN_PASSWORD` do backend.
+Entrar abre uma sessão guardada num cookie HTTP-only, que também autoriza o fluxo ao vivo, e o topo mostra o usuário
+com um botão **Sair**. As requisições que alteram dados enviam o token de CSRF que o backend guarda no cookie
+`XSRF-TOKEN`. Se a sessão acabar (expirou, ou alguém saiu em outra aba), a próxima requisição ou reconexão do fluxo
+traz o formulário de login de volta com um aviso. As sessões sobrevivem a reinícios do backend, então um monitor
+deixado aberto numa tela continua logado.
 
 ### Gestão de equipamentos
 
@@ -201,7 +221,8 @@ tempo (cerca de 600 pontos no total). Excursões curtas além dos limites contin
 ### Requisitos
 
 - Node.js 20.19+ ou 22.12+
-- O backend do cold-monitor rodando (veja o README dele). Por padrão ele aceita requisições de `http://localhost:5173`.
+- O backend do cold-monitor rodando (veja o README dele). Por padrão ele aceita requisições de
+  `http://localhost:5173`, com o cookie de sessão.
 - Opcionalmente, o [simulador do cold-monitor](https://github.com/carloslpv/cold-monitor-simulator) para gerar leituras.
 
 ### Como rodar
@@ -214,7 +235,7 @@ npm run dev
 Abra `http://localhost:5173`. Para ver os dados se mexendo, suba o backend e o simulador, por exemplo:
 
 ```bash
-java -jar target/cold-monitor-simulator.jar --interval 1s --excursion-probability 0.05
+java -jar target/cold-monitor-simulator.jar --api-key <DEVICE_API_KEY> --interval 1s --excursion-probability 0.05
 ```
 
 ### Configuração
@@ -261,7 +282,8 @@ src
 ├── App.tsx          layout da página, navegação e escolha do período
 ├── components       cabeçalho, resumo, painel do equipamento, gráfico, tabela de fora da faixa, selo de status,
 │                    gestão de equipamentos (lista, formulário, diálogo)
-├── hooks            carga de dados e fluxo ao vivo (useMonitor), página atual, relógio, cores do gráfico
+├── hooks            sessão de login (useAuth), carga de dados e fluxo ao vivo (useMonitor), página atual,
+│                    relógio, cores do gráfico
 └── lib              cliente da API, tipos, formatação, redução de pontos, validação do formulário de equipamento
 nginx                configuração do nginx da imagem Docker
 ```
