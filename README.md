@@ -26,6 +26,23 @@ updates live as readings arrive, with no page refresh.
 - **Out-of-range readings**: the latest 100 out-of-range readings across all equipment, newest first.
 - **Period**: 15 minutes, 1 hour, 6 hours or 24 hours.
 
+### Managing equipment
+
+The **Equipamentos** tab (`#/equipamentos`) lists all equipment, active and inactive, and lets you:
+
+- **Register** equipment with code, name, location, type and the allowed temperature range.
+- **Edit** any of these, including the range. New limits apply to readings from then on; stored readings keep the
+  limits they were checked against.
+- **Deactivate** equipment (after a confirmation): it leaves the monitor, stops accepting readings and no longer raises
+  alerts. Its history is kept and it can be **reactivated** later.
+
+The form checks the same rules as the backend before sending: code and name are required (up to 50 and 120
+characters), temperatures accept a comma or a dot with up to two decimals between -100 and 100 °C, and the minimum must
+be lower than the maximum. A code already in use is reported on the code field.
+
+Changes made anywhere (another browser, the API) reach every open dashboard through the live stream's `equipment`
+event, so the monitor picks up new ranges and activated or deactivated equipment without a reload.
+
 Status is always shown with an icon and a label, not by color alone. The interface is in Brazilian Portuguese and
 follows the system light or dark theme.
 
@@ -108,10 +125,11 @@ request.
 
 ```
 src
-├── App.tsx          page layout and period selection
-├── components       header, summary, equipment panel, chart, out-of-range table, status badge
-├── hooks            data loading and live stream (useMonitor), clock, chart colors
-└── lib              API client, types, formatting, downsampling
+├── App.tsx          page layout, navigation and period selection
+├── components       header, summary, equipment panel, chart, out-of-range table, status badge,
+│                    equipment management (list, form, dialog)
+├── hooks            data loading and live stream (useMonitor), current page, clock, chart colors
+└── lib              API client, types, formatting, downsampling, equipment form validation
 nginx                nginx config of the Docker image
 ```
 
@@ -138,6 +156,24 @@ Tudo é atualizado ao vivo conforme as leituras chegam, sem recarregar a página
   chega.
 - **Leituras fora da faixa**: as 100 leituras fora da faixa mais recentes de todos os equipamentos.
 - **Período**: 15 minutos, 1 hora, 6 horas ou 24 horas.
+
+### Gestão de equipamentos
+
+A aba **Equipamentos** (`#/equipamentos`) lista todos os equipamentos, ativos e inativos, e permite:
+
+- **Cadastrar** um equipamento com código, nome, local, tipo e a faixa de temperatura permitida.
+- **Editar** qualquer um desses dados, inclusive a faixa. Os limites novos valem para as leituras daí em diante; as
+  leituras gravadas mantêm os limites com que foram avaliadas.
+- **Desativar** um equipamento (depois de uma confirmação): ele sai do monitoramento, deixa de aceitar leituras e não
+  gera mais alertas. O histórico é mantido e ele pode ser **reativado** depois.
+
+O formulário confere as mesmas regras do backend antes de enviar: código e nome são obrigatórios (até 50 e 120
+caracteres), as temperaturas aceitam vírgula ou ponto com até duas casas decimais entre -100 e 100 °C, e a mínima
+precisa ser menor que a máxima. Um código já usado é apontado no campo do código.
+
+Mudanças feitas em qualquer lugar (outro navegador, a API) chegam a todos os dashboards abertos pelo evento
+`equipment` do fluxo ao vivo, então o monitoramento pega faixas novas e equipamentos ativados ou desativados sem
+recarregar a página.
 
 O status sempre aparece com ícone e texto, não só pela cor. A interface é em português e acompanha o tema claro ou
 escuro do sistema.
@@ -222,9 +258,10 @@ O GitHub Actions (`.github/workflows/ci.yml`) roda o lint e o build e gera a ima
 
 ```
 src
-├── App.tsx          layout da página e escolha do período
-├── components       cabeçalho, resumo, painel do equipamento, gráfico, tabela de fora da faixa, selo de status
-├── hooks            carga de dados e fluxo ao vivo (useMonitor), relógio, cores do gráfico
-└── lib              cliente da API, tipos, formatação, redução de pontos
+├── App.tsx          layout da página, navegação e escolha do período
+├── components       cabeçalho, resumo, painel do equipamento, gráfico, tabela de fora da faixa, selo de status,
+│                    gestão de equipamentos (lista, formulário, diálogo)
+├── hooks            carga de dados e fluxo ao vivo (useMonitor), página atual, relógio, cores do gráfico
+└── lib              cliente da API, tipos, formatação, redução de pontos, validação do formulário de equipamento
 nginx                configuração do nginx da imagem Docker
 ```
