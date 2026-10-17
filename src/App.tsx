@@ -5,7 +5,7 @@ import { OutOfRangeTable } from './components/OutOfRangeTable'
 import { SummaryBar } from './components/SummaryBar'
 import { useMonitor, OUT_OF_RANGE_LIMIT } from './hooks/useMonitor'
 import { useNow } from './hooks/useNow'
-import { API_URL } from './lib/api'
+import { API_ORIGIN } from './lib/api'
 
 const MINUTE = 60_000
 
@@ -28,7 +28,7 @@ export default function App() {
 
       {error && (
         <p className="error" role="alert">
-          Não foi possível carregar os dados de {API_URL}: {error}
+          Não foi possível carregar os dados de {API_ORIGIN}: {error}
         </p>
       )}
 

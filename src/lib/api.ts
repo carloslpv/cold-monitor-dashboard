@@ -1,6 +1,10 @@
 import type { Equipment, Page, Reading, SensorOutage } from './types'
 
+/** Backend base URL; empty when the dashboard is served by the same origin as the API (behind the nginx proxy). */
 export const API_URL = (import.meta.env.VITE_API_URL ?? 'http://localhost:8080').replace(/\/$/, '')
+
+/** Where the data comes from, for error messages. */
+export const API_ORIGIN = API_URL || window.location.origin
 
 /** Largest page the backend serves (Spring Data's default `max-page-size`). */
 const PAGE_SIZE = 2000
@@ -9,7 +13,7 @@ const PAGE_SIZE = 2000
 const MAX_PAGES = 10
 
 async function get<T>(path: string, params: Record<string, string> = {}, signal?: AbortSignal): Promise<T> {
-  const url = new URL(`${API_URL}/api/v1${path}`)
+  const url = new URL(`${API_URL}/api/v1${path}`, window.location.origin)
   for (const [key, value] of Object.entries(params)) {
     url.searchParams.set(key, value)
   }
