@@ -60,6 +60,7 @@ function Dashboard({ user, onLogout }: DashboardProps) {
     useMonitor(windowMs)
   const now = useNow(1000)
   const from = now - windowMs
+  const readOnly = !user.roles.includes('ADMIN')
 
   return (
     <div className="app">
@@ -68,7 +69,7 @@ function Dashboard({ user, onLogout }: DashboardProps) {
       </Header>
 
       {view === 'equipment' ? (
-        <EquipmentManager version={equipmentVersion} />
+        <EquipmentManager version={equipmentVersion} readOnly={readOnly} />
       ) : (
         <>
           {error && (
@@ -87,7 +88,12 @@ function Dashboard({ user, onLogout }: DashboardProps) {
 
           {equipment.length === 0 && !loading && !error && (
             <p className="muted empty">
-              Nenhum equipamento ativo cadastrado. <a href="#/equipamentos">Cadastre um equipamento</a>.
+              Nenhum equipamento ativo cadastrado.{' '}
+              {!readOnly && (
+                <>
+                  <a href="#/equipamentos">Cadastre um equipamento</a>.
+                </>
+              )}
             </p>
           )}
 

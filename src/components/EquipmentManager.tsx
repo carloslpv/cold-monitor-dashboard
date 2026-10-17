@@ -11,6 +11,8 @@ type Editing = { mode: 'new' } | { mode: 'edit'; equipment: Equipment }
 interface Props {
   /** Changes when the live stream reports an equipment change, so edits made elsewhere show up here. */
   version: number
+  /** The user may only look: no registering, editing, deactivating or reactivating. */
+  readOnly: boolean
 }
 
 function byActiveThenName(a: Equipment, b: Equipment): number {
@@ -19,7 +21,7 @@ function byActiveThenName(a: Equipment, b: Equipment): number {
 }
 
 /** Lists all equipment and lets the user register, edit, deactivate and reactivate it. */
-export function EquipmentManager({ version }: Props) {
+export function EquipmentManager({ version, readOnly }: Props) {
   const [equipment, setEquipment] = useState<Equipment[] | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [editing, setEditing] = useState<Editing | null>(null)
@@ -76,10 +78,15 @@ export function EquipmentManager({ version }: Props) {
             </p>
           )}
         </div>
-        <button type="button" className="button button-primary" onClick={() => setEditing({ mode: 'new' })}>
-          Novo equipamento
-        </button>
+        {!readOnly && (
+          <button type="button" className="button button-primary" onClick={() => setEditing({ mode: 'new' })}>
+            Novo equipamento
+          </button>
+        )}
       </div>
+      {readOnly && (
+        <p className="muted">Acesso somente para consulta: cadastro e alterações ficam com o administrador.</p>
+      )}
 
       {error && (
         <p className="error" role="alert">
@@ -92,7 +99,9 @@ export function EquipmentManager({ version }: Props) {
 
       {equipment === null && !error && <p className="muted">Carregando…</p>}
       {equipment !== null && sorted.length === 0 && (
-        <p className="muted empty">Nenhum equipamento cadastrado. Use “Novo equipamento” para começar.</p>
+        <p className="muted empty">
+          Nenhum equipamento cadastrado.{!readOnly && ' Use “Novo equipamento” para começar.'}
+        </p>
       )}
 
       {sorted.length > 0 && (
@@ -105,9 +114,11 @@ export function EquipmentManager({ version }: Props) {
                 <th scope="col">Tipo</th>
                 <th scope="col">Faixa permitida</th>
                 <th scope="col">Situação</th>
-                <th scope="col">
-                  <span className="visually-hidden">Ações</span>
-                </th>
+                {!readOnly && (
+                  <th scope="col">
+                    <span className="visually-hidden">Ações</span>
+                  </th>
+                )}
               </tr>
             </thead>
             <tbody>
@@ -128,37 +139,39 @@ export function EquipmentManager({ version }: Props) {
                       {e.active ? 'Ativo' : 'Inativo'}
                     </span>
                   </td>
-                  <td className="row-actions">
-                    <button
-                      type="button"
-                      className="button button-small"
-                      onClick={() => setEditing({ mode: 'edit', equipment: e })}
-                      aria-label={`Editar ${e.name}`}
-                    >
-                      Editar
-                    </button>
-                    {e.active ? (
-                      <button
-                        type="button"
-                        className="button button-small button-danger"
-                        disabled={busyId === e.id}
-                        onClick={() => setDeactivating(e)}
-                        aria-label={`Desativar ${e.name}`}
-                      >
-                        Desativar
-                      </button>
-                    ) : (
+                  {!readOnly && (
+                    <td className="row-actions">
                       <button
                         type="button"
                         className="button button-small"
-                        disabled={busyId === e.id}
-                        onClick={() => setActive(e, true)}
-                        aria-label={`Reativar ${e.name}`}
+                        onClick={() => setEditing({ mode: 'edit', equipment: e })}
+                        aria-label={`Editar ${e.name}`}
                       >
-                        {busyId === e.id ? 'Reativando…' : 'Reativar'}
+                        Editar
                       </button>
-                    )}
-                  </td>
+                      {e.active ? (
+                        <button
+                          type="button"
+                          className="button button-small button-danger"
+                          disabled={busyId === e.id}
+                          onClick={() => setDeactivating(e)}
+                          aria-label={`Desativar ${e.name}`}
+                        >
+                          Desativar
+                        </button>
+                      ) : (
+                        <button
+                          type="button"
+                          className="button button-small"
+                          disabled={busyId === e.id}
+                          onClick={() => setActive(e, true)}
+                          aria-label={`Reativar ${e.name}`}
+                        >
+                          {busyId === e.id ? 'Reativando…' : 'Reativar'}
+                        </button>
+                      )}
+                    </td>
+                  )}
                 </tr>
               ))}
             </tbody>
