@@ -63,3 +63,9 @@ export interface Page<T> {
 }
 
 export type ConnectionState = 'connecting' | 'live' | 'reconnecting'
+
+/** The logged-in user, as returned by `/api/v1/auth/me` and `/api/v1/auth/login`. */
+export interface CurrentUser {
+  username: string
+  roles: string[]
+}

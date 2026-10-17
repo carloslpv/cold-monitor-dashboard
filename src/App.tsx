@@ -2,12 +2,15 @@ import { useState } from 'react'
 import { EquipmentManager } from './components/EquipmentManager'
 import { EquipmentPanel } from './components/EquipmentPanel'
 import { Header, WindowSelector, type WindowOption } from './components/Header'
+import { LoginPage } from './components/LoginPage'
 import { OutOfRangeTable } from './components/OutOfRangeTable'
 import { SummaryBar } from './components/SummaryBar'
+import { useAuth } from './hooks/useAuth'
 import { useMonitor, OUT_OF_RANGE_LIMIT } from './hooks/useMonitor'
 import { useNow } from './hooks/useNow'
 import { useView } from './hooks/useView'
 import { API_ORIGIN } from './lib/api'
+import type { CurrentUser } from './lib/types'
 
 const MINUTE = 60_000
 
@@ -19,6 +22,37 @@ const WINDOWS: WindowOption[] = [
 ]
 
 export default function App() {
+  const auth = useAuth()
+
+  switch (auth.state.status) {
+    case 'checking':
+      return <p className="muted startup">Carregando…</p>
+    case 'error':
+      return (
+        <main className="login">
+          <div className="login-card">
+            <p className="error" role="alert">
+              Não foi possível falar com o servidor em {API_ORIGIN}: {auth.state.message}
+            </p>
+            <button type="button" className="button" onClick={auth.retry}>
+              Tentar de novo
+            </button>
+          </div>
+        </main>
+      )
+    case 'anonymous':
+      return <LoginPage expired={auth.state.expired} onLogin={auth.loggedIn} />
+    case 'authenticated':
+      return <Dashboard user={auth.state.user} onLogout={auth.logout} />
+  }
+}
+
+interface DashboardProps {
+  user: CurrentUser
+  onLogout: () => Promise<void>
+}
+
+function Dashboard({ user, onLogout }: DashboardProps) {
   const view = useView()
   const [windowMs, setWindowMs] = useState(WINDOWS[0].ms)
   // keeps streaming on the equipment page too, so the monitor is current when you come back
@@ -29,7 +63,7 @@ export default function App() {
 
   return (
     <div className="app">
-      <Header view={view} connection={connection}>
+      <Header view={view} connection={connection} user={user} onLogout={onLogout}>
         {view === 'monitor' && <WindowSelector windows={WINDOWS} windowMs={windowMs} onWindowChange={setWindowMs} />}
       </Header>
 

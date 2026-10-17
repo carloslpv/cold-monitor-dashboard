@@ -1,5 +1,12 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
-import { fetchEquipment, fetchHistory, fetchOpenOutages, fetchOutOfRange, readingStreamUrl } from '../lib/api'
+import {
+  fetchEquipment,
+  fetchHistory,
+  fetchOpenOutages,
+  fetchOutOfRange,
+  readingStreamUrl,
+  verifySession,
+} from '../lib/api'
 import type { ConnectionState, Equipment, Reading, SensorOutage } from '../lib/types'
 
 /** How many out-of-range readings the alert table keeps. */
@@ -148,7 +155,7 @@ export function useMonitor(windowMs: number): MonitorState {
     }
 
     const open = () => {
-      source = new EventSource(readingStreamUrl())
+      source = new EventSource(readingStreamUrl(), { withCredentials: true })
       source.addEventListener('reading', onReading)
       source.addEventListener('sensor-outage', onOutage)
       source.addEventListener('equipment', onEquipment)
@@ -165,6 +172,8 @@ export function useMonitor(windowMs: number): MonitorState {
         // the browser retries on its own unless the stream failed outright
         if (source?.readyState === EventSource.CLOSED) {
           source.close()
+          // EventSource hides the HTTP status, so ask whether the session expired (that shows the login form)
+          verifySession().catch(() => {})
           restartTimer = window.setTimeout(open, RESTART_DELAY_MS)
         }
       }
