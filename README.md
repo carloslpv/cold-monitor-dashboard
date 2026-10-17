@@ -70,11 +70,30 @@ java -jar target/cold-monitor-simulator.jar --interval 1s --excursion-probabilit
 
 | Variable | Default | Description |
 | --- | --- | --- |
-| `VITE_API_URL` | `http://localhost:8080` | Backend base URL |
+| `VITE_API_URL` | `http://localhost:8080` | Backend base URL. Empty means the page's own origin (used by the Docker image) |
 
 Set it in a `.env.local` file (see `.env.example`) or in the environment when running `npm run dev` or `npm run build`.
 If the dashboard is served from an origin other than `http://localhost:5173`, add that origin to the backend's
 `CORS_ALLOWED_ORIGINS`.
+
+### Docker
+
+The `Dockerfile` builds the dashboard and serves it with nginx on port 80. nginx also forwards `/api` (including the
+live stream, without buffering) to the backend at `BACKEND_URL` (default `http://backend:8080`), so the browser talks
+to a single origin and CORS is not involved:
+
+```bash
+docker build -t cold-monitor-dashboard .
+docker run -p 8090:80 -e BACKEND_URL=http://host.docker.internal:8080 cold-monitor-dashboard
+```
+
+To run the whole system (database, backend, dashboard) around the clock, use the compose file in
+[cold-monitor-infra](https://github.com/carloslpv/cold-monitor-infra).
+
+### Continuous integration
+
+GitHub Actions (`.github/workflows/ci.yml`) runs lint and build and builds the Docker image on every push and pull
+request.
 
 ### Scripts
 
@@ -93,6 +112,7 @@ src
 ├── components       header, summary, equipment panel, chart, out-of-range table, status badge
 ├── hooks            data loading and live stream (useMonitor), clock, chart colors
 └── lib              API client, types, formatting, downsampling
+nginx                nginx config of the Docker image
 ```
 
 ---
@@ -165,11 +185,29 @@ java -jar target/cold-monitor-simulator.jar --interval 1s --excursion-probabilit
 
 | Variável | Padrão | Descrição |
 | --- | --- | --- |
-| `VITE_API_URL` | `http://localhost:8080` | URL base do backend |
+| `VITE_API_URL` | `http://localhost:8080` | URL base do backend. Vazio significa a própria origem da página (usado na imagem Docker) |
 
 Defina em um arquivo `.env.local` (veja o `.env.example`) ou no ambiente ao rodar `npm run dev` ou `npm run build`.
 Se o dashboard for servido de outra origem que não `http://localhost:5173`, adicione essa origem em
 `CORS_ALLOWED_ORIGINS` no backend.
+
+### Docker
+
+O `Dockerfile` gera o build do dashboard e serve com o nginx na porta 80. O nginx também repassa `/api` (inclusive o
+fluxo ao vivo, sem buffer) para o backend em `BACKEND_URL` (padrão `http://backend:8080`), então o navegador fala com
+uma única origem e o CORS não entra em jogo:
+
+```bash
+docker build -t cold-monitor-dashboard .
+docker run -p 8090:80 -e BACKEND_URL=http://host.docker.internal:8080 cold-monitor-dashboard
+```
+
+Para rodar o sistema inteiro (banco, backend e dashboard) 24 horas por dia, use o compose do
+[cold-monitor-infra](https://github.com/carloslpv/cold-monitor-infra).
+
+### Integração contínua
+
+O GitHub Actions (`.github/workflows/ci.yml`) roda o lint e o build e gera a imagem Docker a cada push e pull request.
 
 ### Scripts
 
@@ -188,4 +226,5 @@ src
 ├── components       cabeçalho, resumo, painel do equipamento, gráfico, tabela de fora da faixa, selo de status
 ├── hooks            carga de dados e fluxo ao vivo (useMonitor), relógio, cores do gráfico
 └── lib              cliente da API, tipos, formatação, redução de pontos
+nginx                configuração do nginx da imagem Docker
 ```
