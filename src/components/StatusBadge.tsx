@@ -19,3 +19,15 @@ export function StatusBadge({ status }: { status: ReadingStatus }) {
     </span>
   )
 }
+
+/** Shown instead of the reading status while the sensor is not sending readings. */
+export function OfflineBadge() {
+  return (
+    <span className="badge badge-warning">
+      <span className="badge-icon" aria-hidden="true">
+        ⚠
+      </span>
+      Sem leituras
+    </span>
+  )
+}

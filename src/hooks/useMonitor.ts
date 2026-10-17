@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
-import { fetchEquipment, fetchHistory, fetchOutOfRange, readingStreamUrl } from '../lib/api'
-import type { ConnectionState, Equipment, Reading } from '../lib/types'
+import { fetchEquipment, fetchHistory, fetchOpenOutages, fetchOutOfRange, readingStreamUrl } from '../lib/api'
+import type { ConnectionState, Equipment, Reading, SensorOutage } from '../lib/types'
 
 /** How many out-of-range readings the alert table keeps. */
 export const OUT_OF_RANGE_LIMIT = 100
@@ -14,6 +14,8 @@ export interface MonitorState {
   readings: Record<string, Reading[]>
   /** Out-of-range readings across all equipment, newest first. */
   outOfRange: Reading[]
+  /** Open sensor outages per equipment id: equipment the backend flagged as not sending readings. */
+  offline: Record<string, SensorOutage>
   connection: ConnectionState
   loading: boolean
   error: string | null
@@ -43,6 +45,7 @@ export function useMonitor(windowMs: number): MonitorState {
   const [equipment, setEquipment] = useState<Equipment[]>([])
   const [readings, setReadings] = useState<Record<string, Reading[]>>({})
   const [outOfRange, setOutOfRange] = useState<Reading[]>([])
+  const [offline, setOffline] = useState<Record<string, SensorOutage>>({})
   const [connection, setConnection] = useState<ConnectionState>('connecting')
   const [loadedKey, setLoadedKey] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
@@ -66,9 +69,10 @@ export function useMonitor(windowMs: number): MonitorState {
     async function load() {
       const list = await fetchEquipment(controller.signal)
       const fromDate = new Date(from)
-      const [histories, alerts] = await Promise.all([
+      const [histories, alerts, outages] = await Promise.all([
         Promise.all(list.map((e) => fetchHistory(e.id, fromDate, controller.signal))),
         fetchOutOfRange(fromDate, OUT_OF_RANGE_LIMIT, controller.signal),
+        fetchOpenOutages(controller.signal),
       ])
       knownEquipment.current = new Set(list.map((e) => e.id))
       setEquipment(list)
@@ -77,6 +81,7 @@ export function useMonitor(windowMs: number): MonitorState {
         Object.fromEntries(list.map((e, i) => [e.id, mergeReadings(histories[i], previous[e.id] ?? [], from)])),
       )
       setOutOfRange((previous) => mergeOutOfRange(alerts, previous, from))
+      setOffline(Object.fromEntries(outages.map((o) => [o.equipmentId, o])))
       setError(null)
     }
 
@@ -120,9 +125,23 @@ export function useMonitor(windowMs: number): MonitorState {
       }
     }
 
+    const onOutage = (event: MessageEvent<string>) => {
+      const outage = JSON.parse(event.data) as SensorOutage
+      setOffline((previous) => {
+        const next = { ...previous }
+        if (outage.endedAt === null) {
+          next[outage.equipmentId] = outage
+        } else {
+          delete next[outage.equipmentId]
+        }
+        return next
+      })
+    }
+
     const open = () => {
       source = new EventSource(readingStreamUrl())
       source.addEventListener('reading', onReading)
+      source.addEventListener('sensor-outage', onOutage)
       source.onopen = () => {
         setConnection('live')
         if (dropped) {
@@ -149,5 +168,5 @@ export function useMonitor(windowMs: number): MonitorState {
   }, [reload])
 
   const loading = loadedKey !== `${windowMs}:${reloadToken}`
-  return { equipment, readings, outOfRange, connection, loading, error }
+  return { equipment, readings, outOfRange, offline, connection, loading, error }
 }

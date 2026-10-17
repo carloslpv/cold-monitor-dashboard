@@ -18,7 +18,7 @@ const WINDOWS: WindowOption[] = [
 
 export default function App() {
   const [windowMs, setWindowMs] = useState(WINDOWS[0].ms)
-  const { equipment, readings, outOfRange, connection, loading, error } = useMonitor(windowMs)
+  const { equipment, readings, outOfRange, offline, connection, loading, error } = useMonitor(windowMs)
   const now = useNow(1000)
   const from = now - windowMs
 
@@ -32,7 +32,13 @@ export default function App() {
         </p>
       )}
 
-      <SummaryBar equipment={equipment} readings={readings} outOfRange={outOfRange} outOfRangeLimit={OUT_OF_RANGE_LIMIT} />
+      <SummaryBar
+        equipment={equipment}
+        readings={readings}
+        outOfRange={outOfRange}
+        outOfRangeLimit={OUT_OF_RANGE_LIMIT}
+        offline={offline}
+      />
 
       {equipment.length === 0 && !loading && !error && (
         <p className="muted empty">Nenhum equipamento ativo cadastrado.</p>
@@ -40,7 +46,14 @@ export default function App() {
 
       <main className="panels" aria-busy={loading}>
         {equipment.map((e) => (
-          <EquipmentPanel key={e.id} equipment={e} readings={readings[e.id] ?? []} from={from} now={now} />
+          <EquipmentPanel
+            key={e.id}
+            equipment={e}
+            readings={readings[e.id] ?? []}
+            outage={offline[e.id]}
+            from={from}
+            now={now}
+          />
         ))}
       </main>
 

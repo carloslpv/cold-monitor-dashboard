@@ -1,4 +1,4 @@
-import type { Equipment, Page, Reading } from './types'
+import type { Equipment, Page, Reading, SensorOutage } from './types'
 
 export const API_URL = (import.meta.env.VITE_API_URL ?? 'http://localhost:8080').replace(/\/$/, '')
 
@@ -49,6 +49,11 @@ export async function fetchOutOfRange(from: Date, limit: number, signal?: AbortS
     signal,
   )
   return result.content
+}
+
+/** Equipment the backend currently considers offline (no readings for its configured time). */
+export function fetchOpenOutages(signal?: AbortSignal): Promise<SensorOutage[]> {
+  return get<SensorOutage[]>('/sensor-outages', { open: 'true' }, signal)
 }
 
 export function readingStreamUrl(): string {

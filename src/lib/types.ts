@@ -29,6 +29,20 @@ export interface Reading {
   maxTemperature: number
 }
 
+/** A stretch without readings, as returned by `GET /api/v1/sensor-outages` and the `sensor-outage` stream event. */
+export interface SensorOutage {
+  id: string
+  equipmentId: string
+  equipmentCode: string
+  /** Arrival of the last reading before the silence. */
+  lastReadingAt: string
+  lastTemperature: number
+  detectedAt: string
+  /** Arrival of the first reading after it; null while the sensor is still silent. */
+  endedAt: string | null
+  endTemperature: number | null
+}
+
 export interface Page<T> {
   content: T[]
   page: number

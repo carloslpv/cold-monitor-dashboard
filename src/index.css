@@ -10,7 +10,9 @@
   --accent: #2a78d6;
   --good: #0ca30c;
   --good-text: #006300;
+  --warning: #c98a00;
   --warning-text: #8a5a00;
+  --warning-wash: rgba(201, 138, 0, 0.12);
   --critical: #d03b3b;
   --critical-text: #b42f2f;
   --critical-wash: rgba(208, 59, 59, 0.08);
@@ -34,7 +36,9 @@
     --grid: #2c2c2a;
     --accent: #3987e5;
     --good-text: #0ca30c;
+    --warning: #fab219;
     --warning-text: #fab219;
+    --warning-wash: rgba(250, 178, 25, 0.14);
     --critical-text: #e66767;
     --critical-wash: rgba(208, 59, 59, 0.16);
     --good-wash: rgba(12, 163, 12, 0.16);
@@ -196,6 +200,11 @@ p {
   background: var(--critical-wash);
 }
 
+.tile-warning {
+  border-color: var(--warning);
+  background: var(--warning-wash);
+}
+
 /* equipment panels */
 
 .panels {
@@ -217,6 +226,11 @@ p {
 .panel-alert {
   border-color: var(--critical);
   box-shadow: inset 4px 0 0 var(--critical);
+}
+
+.panel-offline {
+  border-color: var(--warning);
+  box-shadow: inset 4px 0 0 var(--warning);
 }
 
 .panel-header {
@@ -330,6 +344,14 @@ p {
 
 .badge-critical .badge-icon {
   color: var(--critical);
+}
+
+.badge-warning {
+  background: var(--warning-wash);
+}
+
+.badge-warning .badge-icon {
+  color: var(--warning-text);
 }
 
 /* out-of-range table */
