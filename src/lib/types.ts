@@ -16,6 +16,17 @@ export interface Equipment {
   updatedAt: string
 }
 
+/** Body of `POST /api/v1/equipment` and `PUT /api/v1/equipment/{id}`. */
+export interface EquipmentInput {
+  code: string
+  name: string
+  location: string | null
+  type: EquipmentType
+  minTemperature: number
+  maxTemperature: number
+  active: boolean
+}
+
 /** A reading as returned by the readings endpoints and the live stream. */
 export interface Reading {
   id: string

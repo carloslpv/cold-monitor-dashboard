@@ -17,6 +17,8 @@ export interface MonitorState {
   /** Open sensor outages per equipment id: equipment the backend flagged as not sending readings. */
   offline: Record<string, SensorOutage>
   connection: ConnectionState
+  /** Goes up whenever the stream reports an equipment registered or changed, anywhere. */
+  equipmentVersion: number
   loading: boolean
   error: string | null
 }
@@ -50,6 +52,7 @@ export function useMonitor(windowMs: number): MonitorState {
   const [loadedKey, setLoadedKey] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [reloadToken, setReloadToken] = useState(0)
+  const [equipmentVersion, setEquipmentVersion] = useState(0)
 
   const windowRef = useRef(windowMs)
   const knownEquipment = useRef(new Set<string>())
@@ -138,10 +141,17 @@ export function useMonitor(windowMs: number): MonitorState {
       })
     }
 
+    // new thresholds, or equipment activated or deactivated: reload so panels and history match
+    const onEquipment = () => {
+      setEquipmentVersion((version) => version + 1)
+      reload()
+    }
+
     const open = () => {
       source = new EventSource(readingStreamUrl())
       source.addEventListener('reading', onReading)
       source.addEventListener('sensor-outage', onOutage)
+      source.addEventListener('equipment', onEquipment)
       source.onopen = () => {
         setConnection('live')
         if (dropped) {
@@ -168,5 +178,5 @@ export function useMonitor(windowMs: number): MonitorState {
   }, [reload])
 
   const loading = loadedKey !== `${windowMs}:${reloadToken}`
-  return { equipment, readings, outOfRange, offline, connection, loading, error }
+  return { equipment, readings, outOfRange, offline, connection, equipmentVersion, loading, error }
 }

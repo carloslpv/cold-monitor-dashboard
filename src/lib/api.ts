@@ -1,4 +1,4 @@
-import type { Equipment, Page, Reading, SensorOutage } from './types'
+import type { Equipment, EquipmentInput, Page, Reading, SensorOutage } from './types'
 
 /** Backend base URL; empty when the dashboard is served by the same origin as the API (behind the nginx proxy). */
 export const API_URL = (import.meta.env.VITE_API_URL ?? 'http://localhost:8080').replace(/\/$/, '')
@@ -12,20 +12,76 @@ const PAGE_SIZE = 2000
 /** Stops a history fetch from pulling an unbounded number of pages. */
 const MAX_PAGES = 10
 
+/** An error response from the API, with the RFC 9457 problem detail and per-field validation messages. */
+export class ApiError extends Error {
+  readonly status: number
+  readonly errors: Record<string, string>
+
+  constructor(message: string, status: number, errors: Record<string, string> = {}) {
+    super(message)
+    this.name = 'ApiError'
+    this.status = status
+    this.errors = errors
+  }
+}
+
+function apiUrl(path: string): URL {
+  return new URL(`${API_URL}/api/v1${path}`, window.location.origin)
+}
+
+async function failure(method: string, url: URL, response: Response): Promise<ApiError> {
+  let detail = `${method} ${url.pathname} failed with HTTP ${response.status}`
+  let errors: Record<string, string> = {}
+  try {
+    const problem = (await response.json()) as { detail?: string; errors?: Record<string, string> }
+    detail = problem.detail ?? detail
+    errors = problem.errors ?? {}
+  } catch {
+    // not a problem+json body
+  }
+  return new ApiError(detail, response.status, errors)
+}
+
 async function get<T>(path: string, params: Record<string, string> = {}, signal?: AbortSignal): Promise<T> {
-  const url = new URL(`${API_URL}/api/v1${path}`, window.location.origin)
+  const url = apiUrl(path)
   for (const [key, value] of Object.entries(params)) {
     url.searchParams.set(key, value)
   }
   const response = await fetch(url, { signal, headers: { Accept: 'application/json' } })
   if (!response.ok) {
-    throw new Error(`GET ${url.pathname} failed with HTTP ${response.status}`)
+    throw await failure('GET', url, response)
+  }
+  return (await response.json()) as T
+}
+
+async function send<T>(method: 'POST' | 'PUT', path: string, body: unknown): Promise<T> {
+  const url = apiUrl(path)
+  const response = await fetch(url, {
+    method,
+    headers: { Accept: 'application/json', 'Content-Type': 'application/json' },
+    body: JSON.stringify(body),
+  })
+  if (!response.ok) {
+    throw await failure(method, url, response)
   }
   return (await response.json()) as T
 }
 
 export function fetchEquipment(signal?: AbortSignal): Promise<Equipment[]> {
   return get<Equipment[]>('/equipment', { active: 'true' }, signal)
+}
+
+/** Active and inactive equipment, sorted by name. */
+export function fetchAllEquipment(signal?: AbortSignal): Promise<Equipment[]> {
+  return get<Equipment[]>('/equipment', {}, signal)
+}
+
+export function createEquipment(input: EquipmentInput): Promise<Equipment> {
+  return send<Equipment>('POST', '/equipment', input)
+}
+
+export function updateEquipment(id: string, input: EquipmentInput): Promise<Equipment> {
+  return send<Equipment>('PUT', `/equipment/${id}`, input)
 }
 
 /** All readings of one equipment since `from`, oldest first. */
